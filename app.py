@@ -6,30 +6,54 @@ import streamlit as st
 from pycaret.clustering import load_model, predict_model
 import plotly.express as px
 
-MODEL_NAME = 'welcome_survey_clustering_pipeline_v1'
-DATA = 'welcome_survey_simple_v1.csv'
-CLUSTERS_NAMES_AND_DESCRIPTIONS = 'welcome_survey_cluster_names_and_descriptions_v1.json'
+MODEL_NAME1 = 'welcome_survey_clustering_pipeline_v1'
+DATA1 = 'welcome_survey_simple_v1.csv'
+CLUSTERS_NAMES_AND_DESCRIPTIONS1 = 'welcome_survey_cluster_names_and_descriptions_v1.json'
 
-@st.cache_data
+MODEL_NAME2 = 'welcome_survey_clustering_pipeline_v2'
+DATA2 = 'welcome_survey_simple_v2.csv'
+CLUSTERS_NAMES_AND_DESCRIPTIONS2 = 'welcome_survey_cluster_names_and_descriptions_v2.json'
+
+st.session_state.setdefault("data_version", 'v1')
+st.session_state.setdefault("MODEL_NAME", MODEL_NAME1)
+st.session_state.setdefault("DATA", DATA1)
+st.session_state.setdefault("CLUSTERS_NAMES_AND_DESCRIPTIONS", CLUSTERS_NAMES_AND_DESCRIPTIONS1)
+
 def get_model():
-    return load_model(MODEL_NAME)
+    return load_model(st.session_state['MODEL_NAME'])
 
 
-@st.cache_data
 def get_clusters_names_and_descriptions():
-    with open(CLUSTERS_NAMES_AND_DESCRIPTIONS, 'rb') as f:
+    with open(st.session_state['CLUSTERS_NAMES_AND_DESCRIPTIONS'], 'rb') as f:
         return json.loads(f.read())
 
-@st.cache_data
 def get_all_participants():
     model = get_model()
-    all_df = pd.read_csv(DATA, sep=';')
+    all_df = pd.read_csv(st.session_state['DATA'], sep=';')
     df_with_clusters = predict_model(model, data=all_df)
     return df_with_clusters
+
+
+def set_data_version():
+    if st.session_state['data_version'] == 'v2':
+        st.session_state.update(
+            MODEL_NAME=MODEL_NAME2, 
+            DATA=DATA2, 
+            CLUSTERS_NAMES_AND_DESCRIPTIONS=CLUSTERS_NAMES_AND_DESCRIPTIONS2
+        )
+    else:
+        st.session_state.update(
+            MODEL_NAME=MODEL_NAME1, 
+            DATA=DATA1, 
+            CLUSTERS_NAMES_AND_DESCRIPTIONS=CLUSTERS_NAMES_AND_DESCRIPTIONS1
+        )
 
 st.title("Znajdź znajomych")
 
 with st.sidebar:
+    st.radio('Wersja danych', ['v1', 'v2'], key='data_version', on_change=set_data_version )
+   
+    
     st.header('Powiedź nam coś o sobie')
     st.markdown(
         "Pomożemy Ci znaleźć osoby, które mają podobne zainteresowania")
